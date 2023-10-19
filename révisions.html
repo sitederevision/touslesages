@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Site de Révision</title>
+    <style>
+        body {
+            background-image: url("bgsite.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+
+        /* Votre code CSS va ici */
+        /* Style par défaut pour les éléments textuels */
+        a, button {
+            font-weight: normal;
+            text-decoration: none; /* Supprimer la soulignement par défaut des liens */
+        }
+
+        input[type="text"] {
+            border: none; /* Supprimer la bordure des champs de saisie texte */
+            font-weight: normal;
+        }
+
+        /* Style au survol (gras) */
+        a:hover, button:hover {
+            font-weight: bold;
+        }
+
+        input[type="text"]:hover {
+            font-weight: bold;
+        }
+
+        /* Style pour la marge bleu ciel en haut de la page */
+        .header {
+            background-color: #87CEEB; /* Couleur bleu ciel */
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Style pour le contenu principal */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        /* Styliser l'image */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Styliser le titre */
+        h1 {
+            font-size: 24px;
+            text-align: center;
+        }
+
+        /* Styliser le champ de saisie "Commencer" */
+        #startInput {
+            width: 300px;
+            height: 50px;
+            font-size: 18px;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Site de Révision</h1>
+    </div>
+    <div class="marges"></div>
+
+    <!-- Le reste de votre contenu HTML va ici -->
+        <h2>Ajouter une nouvelle question</h2>
+        <input type="text" id="question" placeholder="Question">
+        <input type="text" id="reponse" placeholder="Réponse">
+        <select id="matiereSelection">
+            <option value="">Sélectionner une matière</option>
+        </select>
+        <input type="text" id="newMatiere" placeholder="Créer une nouvelle matière">
+        <button onclick="ajouterQuestion()">Ajouter</button>
+
+        <h2>Générer un quiz aléatoire</h2>
+        <select id="quizMatiere">
+            <option value="">Toutes les matières</option>
+        </select>
+        <button onclick="genererQuiz()">Générer Quiz</button>
+        <p id="quizQuestion"></p>
+        <input type="text" id="quizReponse" placeholder="Votre Réponse">
+        <button onclick="verifierReponse()">Vérifier</button>
+        <p id="resultat"></p>
+
+        <h2>Liste des Questions</h2>
+        <select id="matiereTri">
+            <option value="">Toutes les matières</option>
+        </select>
+        <ul id="listeQuestions"></ul>
+
+        <button onclick="enregistrerQuestions()">Enregistrer les questions</button>
+        <input type="file" id="importQuestions" accept=".json">
+        <button onclick="importerQuestions()">Importer des questions</button>
+        <button onclick="ajouterMatiere()">Créer une matière</button>
+    </div>
+
+    <script>
+        // Structure de données pour les matières et les questions
+        let matieresEtQuestions = {};
+
+        function ajouterQuestion() {
+            const question = document.getElementById('question').value;
+            const reponse = document.getElementById('reponse').value;
+            const matiereSelection = document.getElementById('matiereSelection');
+            const selectedMatiere = matiereSelection.value;
+            let matiere;
+
+            if (selectedMatiere === '') {
+                matiere = document.getElementById('newMatiere').value;
+
+                if (matiere === '') {
+                    alert("Veuillez sélectionner ou créer une matière.");
+                    return;
+                }
+
+                // Crée la matière si elle n'existe pas déjà
+                if (!matieresEtQuestions[matiere]) {
+                    matieresEtQuestions[matiere] = [];
+                    ajouterOptionMatiere(matiere);
+                }
+            } else {
+                matiere = selectedMatiere;
+            }
+
+            // Ajoute la question à la matière
+            matieresEtQuestions[matiere].push({ question, reponse });
+
+            document.getElementById('question').value = '';
+            document.getElementById('reponse').value = '';
+            document.getElementById('matiereSelection').value = '';
+            document.getElementById('newMatiere').value = '';
+        }
+
+        function ajouterOptionMatiere(matiere) {
+            const matiereSelection = document.getElementById('matiereSelection');
+            const quizMatiere = document.getElementById('quizMatiere');
+            const matiereTri = document.getElementById('matiereTri');
+            const newOption = document.createElement('option');
+            newOption.value = matiere;
+            newOption.text = matiere;
+            matiereSelection.add(newOption);
+
+            const newQuizOption = document.createElement('option');
+            newQuizOption.value = matiere;
+            newQuizOption.text = matiere;
+            quizMatiere.add(newQuizOption);
+
+            const newTriOption = document.createElement('option');
+            newTriOption.value = matiere;
+            newTriOption.text = matiere;
+            matiereTri.add(newTriOption);
+        }
+
+        function ajouterMatiere() {
+            const newMatiere = document.getElementById('newMatiere').value;
+
+            if (newMatiere) {
+                if (!matieresEtQuestions[newMatiere]) {
+                    matieresEtQuestions[newMatiere] = [];
+                    ajouterOptionMatiere(newMatiere);
+                }
+
+                document.getElementById('newMatiere').value = '';
+            }
+        }
+
+        function genererQuiz() {
+            const matiereSelectionnee = document.getElementById('quizMatiere').value;
+            let matiereQuestions = [];
+
+            if (matiereSelectionnee) {
+                if (matiereSelectionnee === '') {
+                    // Sélection "Toutes les matières" - Concatène les questions de toutes les matières
+                    for (const matiere in matieresEtQuestions) {
+                        matiereQuestions = matiereQuestions.concat(matieresEtQuestions[matiere]);
+                    }
+                } else {
+                    // Sélection d'une matière spécifique
+                    matiereQuestions = matieresEtQuestions[matiereSelectionnee] || [];
+                }
+            }
+
+            if (matiereQuestions.length === 0) {
+                document.getElementById('quizQuestion').textContent = "Aucune question trouvée pour la matière spécifiée.";
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * matiereQuestions.length);
+            const randomQuestion = matiereQuestions[randomIndex];
+            document.getElementById('quizQuestion').textContent = randomQuestion.question;
+        }
+
+        function verifierReponse() {
+            const userReponse = document.getElementById('quizReponse').value.toLowerCase(); // Conversion en minuscules
+            const currentQuestion = document.getElementById('quizQuestion').textContent;
+
+            for (const matiere in matieresEtQuestions) {
+                for (const question of matieresEtQuestions[matiere]) {
+                    if (question.question === currentQuestion) {
+                        const correctReponse = question.reponse.toLowerCase(); // Conversion en minuscules
+                        if (userReponse === correctReponse) {
+                            document.getElementById('resultat').textContent = 'Bonne réponse !';
+                        } else {
+                            document.getElementById('resultat').textContent = 'Mauvaise réponse.';
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
+        function enregistrerQuestions() {
+            localStorage.setItem('matieresEtQuestions', JSON.stringify(matieresEtQuestions));
+            alert('Questions enregistrées avec succès.');
+        }
+
+        function importerQuestions() {
+            const importInput = document.getElementById('importQuestions');
+            const file = importInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    const importedData = JSON.parse(event.target.result);
+
+                    if (importedData.matieresEtQuestions) {
+                        matieresEtQuestions = importedData.matieresEtQuestions;
+                        alert('Questions importées avec succès.');
+
+                        // Met à jour les options de matière
+                        for (const matiere in matieresEtQuestions) {
+                            ajouterOptionMatiere(matiere);
+                        }
+                    } else {
+                        alert('Fichier JSON invalide. Assurez-vous que le fichier contient un objet "matieresEtQuestions".');
+                    }
+                };
+
+                reader.readAsText(file);
+            } else {
+                alert('Sélectionnez un fichier JSON à importer.');
+            }
+        }
+
+        // Charger les questions depuis le stockage local lors du chargement de la page
+        window.onload = function () {
+            const storedMatieresEtQuestions = localStorage.getItem('matieresEtQuestions');
+
+            if (storedMatieresEtQuestions) {
+                matieresEtQuestions = JSON.parse(storedMatieresEtQuestions);
+
+                // Met à jour les options de matière
+                for (const matiere in matieresEtQuestions) {
+                    ajouterOptionMatiere(matiere);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
